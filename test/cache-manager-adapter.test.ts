@@ -2,7 +2,7 @@ import { createCache } from 'cache-manager';
 import { Cacheable, CacheClear } from '@type-cacheable/core';
 import { CacheManagerAdapter, useAdapter } from '../lib';
 import { KeyvCacheableMemory } from 'cacheable';
-import Keyv from 'keyv';
+import { Keyv } from 'keyv';
 
 const keyName = 'aSimpleCacheManagerKey';
 const keyName_2 = 'aSimpleCacheManagerKey2';

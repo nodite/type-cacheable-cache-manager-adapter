@@ -1,6 +1,6 @@
 import cacheableManager, { CacheClient, CacheManagerOptions } from '@type-cacheable/core';
 import { createCache } from 'cache-manager';
-import Keyv from 'keyv';
+import { Keyv } from 'keyv';
 import wcmatch from 'wildcard-match';
 
 /**
