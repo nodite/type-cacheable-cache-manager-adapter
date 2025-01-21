@@ -61,7 +61,7 @@ export class CacheManagerAdapter implements CacheClient {
 
         // keyv
         if (store.iterator) {
-          for await (const [key, value] of store.iterator(undefined)) {
+          for await (const [key, value] of store.iterator(store.namespace)) {
             if (!isMatch(key)) continue;
             keys.push(key);
           }

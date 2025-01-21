@@ -20,7 +20,8 @@ describe('CacheManagerAdapter Tests', () => {
       store: new KeyvCacheableMemory(),
       useKeyPrefix: false,
       serialize: undefined,
-      deserialize: undefined
+      deserialize: undefined,
+      namespace: '',
     });
     client = createCache({ stores: [keyv] });
     cacheManagerAdapter = useAdapter(client, [keyv]);
