@@ -1,0 +1,53 @@
+{
+  "name": "@oscaner/cache-manager-adapter",
+  "version": "17.0.0",
+  "description": "Adapter for using cache-manager with type-cacheable",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf ./dist",
+    "start": "node ./dist/index.js",
+    "test": "jest --coverage --runInBand",
+    "test:watch": "jest --watch --runInBand",
+    "build": "npm run clean && tsc -p ./tsconfig.json",
+    "prepare": "npm run-script build",
+    "prepublishOnly": "npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Oscaner/type-cacheable-cache-manager-adapter.git"
+  },
+  "keywords": [
+    "cache",
+    "typescript",
+    "keyv"
+  ],
+  "author": {
+    "name": "Joshua Slate",
+    "url": "https://joshuaslate.com"
+  },
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Oscaner/type-cacheable-cache-manager-adapter/issues"
+  },
+  "homepage": "https://github.com/Oscaner/type-cacheable-cache-manager-adapter#readme",
+  "devDependencies": {
+    "@types/jest": "^29",
+    "cacheable": "^1",
+    "jest": "^29",
+    "ts-jest": "^29",
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@type-cacheable/core": "^14",
+    "cache-manager": "^6",
+    "keyv": "^5",
+    "wildcard-match": "^5"
+  }
+}
