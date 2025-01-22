@@ -40,7 +40,10 @@ export class CacheManagerAdapter implements CacheClient {
   }
 
   public async keys(pattern: string): Promise<string[]> {
-    const isMatch = (key: string) => {
+    /**
+     * isMatch.
+     */
+    const isMatch = (pattern: string, key: string) => {
       if (pattern.includes('%')) {
         key = key.replace(/%/g, '*');
       }
@@ -57,26 +60,28 @@ export class CacheManagerAdapter implements CacheClient {
 
     const keyss = await Promise.all(
       this.stores.map(async (store): Promise<string[]> => {
+        const _pattern = Boolean(store.namespace) && !pattern.startsWith(`${store.namespace}:`) ? `${store.namespace}:${pattern}`: pattern;
+
         const keys = [] as string[];
 
         // keyv
         if (store.iterator) {
-          for await (const [key, value] of store.iterator(store.namespace)) {
-            if (!isMatch(key)) continue;
+          for await (const [key, value] of store.iterator(_pattern)) {
+            if (!isMatch(_pattern, key)) continue;
             keys.push(key);
           }
         }
         // cacheable
         else if (typeof store.store.store?.keys?.[Symbol.iterator] === 'function') {
           for await (const key of store.store.store.keys) {
-            if (!isMatch(key)) continue;
+            if (!isMatch(_pattern, key)) continue;
             keys.push(key);
           }
         }
         // lru-cache
         else if (typeof store.store.keys === 'function') {
           for (const key of store.store.keys()) {
-            if (!isMatch(key)) continue;
+            if (!isMatch(_pattern, key)) continue;
             keys.push(key);
           }
         }
