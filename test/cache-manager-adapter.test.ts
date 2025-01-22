@@ -3,8 +3,8 @@ import { createCache } from 'cache-manager';
 import { Cacheable, CacheClear } from '@type-cacheable/core';
 import { CacheManagerAdapter, useAdapter } from '../lib';
 // import { KeyvCacheableMemory } from 'cacheable';
-// import {KeyvSqlite} from '@resolid/keyv-sqlite'
-import { LRUCache } from 'lru-cache'
+import {KeyvSqlite} from '@resolid/keyv-sqlite'
+// import { LRUCache } from 'lru-cache'
 import { Keyv } from 'keyv';
 
 const keyName = 'aSimpleCacheManagerKey';
@@ -26,22 +26,22 @@ describe('CacheManagerAdapter Tests', () => {
     //   deserialize: undefined,
     //   namespace: '',
     // });
-    // const keyv = new Keyv({
-    //   store: new KeyvSqlite({
-    //     enableWALMode: true,
-    //     table: 'test',
-    //     uri: join(process.cwd(), "runtime", "cache.sqlite3"),
-    //   }),
-    //   useKeyPrefix: false,
-    //   namespace: '',
-    // })
     const keyv = new Keyv({
-      store: new LRUCache({ max: 500 }),
+      store: new KeyvSqlite({
+        enableWALMode: true,
+        table: 'test',
+        uri: join(process.cwd(), "runtime", "cache.sqlite3"),
+      }),
       useKeyPrefix: false,
-      serialize: undefined,
-      deserialize: undefined,
       namespace: '',
     })
+    // const keyv = new Keyv({
+    //   store: new LRUCache({ max: 500 }),
+    //   useKeyPrefix: false,
+    //   serialize: undefined,
+    //   deserialize: undefined,
+    //   namespace: '',
+    // })
     client = createCache({ stores: [keyv] });
     cacheManagerAdapter = useAdapter(client, [keyv]);
   });

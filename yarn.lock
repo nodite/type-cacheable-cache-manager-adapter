@@ -522,7 +522,7 @@
 
 "@resolid/keyv-sqlite@github:Oscaner/keyv-sqlite#main":
   version "5.0.1"
-  resolved "https://codeload.github.com/Oscaner/keyv-sqlite/tar.gz/f07b13344aa7b4c69945af70e1fb0750a975734c"
+  resolved "https://codeload.github.com/Oscaner/keyv-sqlite/tar.gz/38f1eda2130b97cebc21ac15d97c130a9ffb61e7"
 
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"

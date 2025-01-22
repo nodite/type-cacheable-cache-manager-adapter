@@ -43,17 +43,17 @@ export class CacheManagerAdapter implements CacheClient {
     /**
      * isMatch.
      */
-    const isMatch = (pattern: string, key: string) => {
-      if (pattern === key)  return true;
+    const isMatch = (ptn: string, key: string) => {
+      if (ptn === key)  return true;
 
-      if (pattern.includes('%')) {
-        key = key.replace(/%/g, '*');
+      if (ptn.includes('%')) {
+        ptn = ptn.replaceAll('%', '*');
       }
 
-      if (wcmatch(pattern)(key)) return true;
+      if (wcmatch(ptn)(key)) return true;
 
       try {
-        const regExp = new RegExp(pattern, 'g');
+        const regExp = new RegExp(ptn, 'g');
         return regExp.test(key);
       } catch {
         return false;
@@ -102,6 +102,10 @@ export class CacheManagerAdapter implements CacheClient {
         // GeneratorFunction
         else if (keyFnTag === 'GeneratorFunction') {
           keys.push(...Array.from<string>(orgStore?.keys(_pattern)))
+        }
+        // AsyncFunction
+        else if (keyFnTag === 'AsyncFunction') {
+          keys.push(...(await orgStore?.keys(_pattern)))
         }
         // keyv
         else if (store.iterator) {

@@ -2,7 +2,7 @@
   "compilerOptions": {
     "rootDir": "./lib",
     "baseUrl": "./",
-    "target": "es2015",
+    "target": "es2021",
     "module": "commonjs",
     "declaration": true,
     "outDir": "./dist",
