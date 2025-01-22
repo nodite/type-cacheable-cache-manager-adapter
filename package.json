@@ -38,9 +38,12 @@
   },
   "homepage": "https://github.com/Oscaner/type-cacheable-cache-manager-adapter#readme",
   "devDependencies": {
+    "@resolid/keyv-sqlite": "github:Oscaner/keyv-sqlite#main",
     "@types/jest": "^29",
+    "better-sqlite3": "^11",
     "cacheable": "^1",
     "jest": "^29",
+    "lru-cache": "^11.0.2",
     "ts-jest": "^29",
     "typescript": "^5"
   },

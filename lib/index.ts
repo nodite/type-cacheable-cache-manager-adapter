@@ -44,6 +44,8 @@ export class CacheManagerAdapter implements CacheClient {
      * isMatch.
      */
     const isMatch = (pattern: string, key: string) => {
+      if (pattern === key)  return true;
+
       if (pattern.includes('%')) {
         key = key.replace(/%/g, '*');
       }
@@ -60,28 +62,50 @@ export class CacheManagerAdapter implements CacheClient {
 
     const keyss = await Promise.all(
       this.stores.map(async (store): Promise<string[]> => {
-        const _pattern = Boolean(store.namespace) && !pattern.startsWith(`${store.namespace}:`) ? `${store.namespace}:${pattern}`: pattern;
+        // pattern.
+        let _pattern: string;
 
+        if (!store.useKeyPrefix) {
+          _pattern = pattern;
+        } else if (store.namespace && !pattern.startsWith(store.namespace)) {
+          _pattern = `${store.namespace}:${pattern}`;
+        } else {
+          _pattern = pattern;
+        }
+
+        // original store.
+        let orgStore: any
+
+        if (store.store.store?.keys) {
+          orgStore = store.store.store;
+        } else if (store.store.keys) {
+          orgStore = store.store;
+        }
+
+        const keyFnTag = orgStore?.keys?.[Symbol.toStringTag]
+
+        const orgStoreTag = orgStore?.[Symbol.toStringTag];
+
+        // keys.
         const keys = [] as string[];
 
+        // Map Iterator
+        if (keyFnTag === 'Map Iterator') {
+          keys.push(...Array.from<string>(orgStore?.keys))
+        }
+        // AsyncGeneratorFunction
+        else if (keyFnTag === 'AsyncGeneratorFunction') {
+          for await (const key of orgStore?.keys(_pattern)) {
+            keys.push(key);
+          }
+        }
+        // GeneratorFunction
+        else if (keyFnTag === 'GeneratorFunction') {
+          keys.push(...Array.from<string>(orgStore?.keys(_pattern)))
+        }
         // keyv
-        if (store.iterator) {
-          for await (const [key, value] of store.iterator(_pattern)) {
-            if (!isMatch(_pattern, key)) continue;
-            keys.push(key);
-          }
-        }
-        // cacheable
-        else if (typeof store.store.store?.keys?.[Symbol.iterator] === 'function') {
-          for await (const key of store.store.store.keys) {
-            if (!isMatch(_pattern, key)) continue;
-            keys.push(key);
-          }
-        }
-        // lru-cache
-        else if (typeof store.store.keys === 'function') {
-          for (const key of store.store.keys()) {
-            if (!isMatch(_pattern, key)) continue;
+        else if (store.iterator) {
+          for await (const [key, value] of store.iterator(store.namespace)) {
             keys.push(key);
           }
         }
@@ -89,7 +113,7 @@ export class CacheManagerAdapter implements CacheClient {
           throw new Error('Not implemented');
         }
 
-        return keys;
+        return keys.filter(key => isMatch(_pattern, key));
       })
     )
 
