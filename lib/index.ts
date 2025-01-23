@@ -109,7 +109,7 @@ export class CacheManagerAdapter implements CacheClient {
         }
         // keyv
         else if (store.iterator) {
-          for await (const [key, value] of store.iterator(store.namespace)) {
+          for await (const [key, value] of store.iterator(_pattern)) {
             keys.push(key);
           }
         }
