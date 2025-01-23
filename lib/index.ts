@@ -36,7 +36,8 @@ export class CacheManagerAdapter implements CacheClient {
   }
 
   public async del(cacheKey: string | string[]): Promise<void> {
-    Array.isArray(cacheKey) ? await this.client.mdel(cacheKey) : await this.client.del(cacheKey)
+    if (!Array.isArray(cacheKey)) cacheKey = [cacheKey];
+    await Promise.all(cacheKey.map(async (key) => await this.client.del(key)));
   }
 
   public async keys(pattern: string): Promise<string[]> {
@@ -82,6 +83,8 @@ export class CacheManagerAdapter implements CacheClient {
           orgStore = store.store;
         }
 
+        const dialect = store.store.opts.dialect
+
         const keyFnTag = orgStore?.keys?.[Symbol.toStringTag]
 
         const orgStoreTag = orgStore?.[Symbol.toStringTag];
@@ -106,6 +109,13 @@ export class CacheManagerAdapter implements CacheClient {
         // AsyncFunction
         else if (keyFnTag === 'AsyncFunction') {
           keys.push(...(await orgStore?.keys(_pattern)))
+        }
+        // postgres
+        else if (dialect === 'postgres') {
+          const select = `SELECT key FROM ${store.store.opts.schema!}.${store.store.opts.table!} WHERE key LIKE $1`;
+          const ptn = _pattern?.replaceAll('*', '%') ?? "";
+          const rows = await store.store.query(select, [ptn ? `%${ptn}%` : '%']);
+          keys.push(...rows.map((row: any) => row.key));
         }
         // keyv
         else if (store.iterator) {
