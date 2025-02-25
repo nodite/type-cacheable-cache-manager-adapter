@@ -1,6 +1,6 @@
-# @oscaner/cache-manager-adapter
+# @nodite/cache-manager-adapter
 
-[![npm downloads](https://img.shields.io/npm/dm/@oscaner/cache-manager-adapter)](https://www.npmjs.com/package/@oscaner/cache-manager-adapter)
+[![npm downloads](https://img.shields.io/npm/dm/@nodite/cache-manager-adapter)](https://www.npmjs.com/package/@nodite/cache-manager-adapter)
 
 🎉 cache-manager V6 supported
 
@@ -16,8 +16,8 @@ maintained by `@type-cacheable`'s maintainers and users.
 ### Installation
 
 ```bash
-# npm install --save @type-cacheable/core @oscaner/cache-manager-adapter
-npm install --save @type-cacheable/core https://github.com/Oscaner/type-cacheable-cache-manager-adapter.git#main
+# npm install --save @type-cacheable/core @nodite/cache-manager-adapter
+npm install --save @type-cacheable/core https://github.com/nodite/type-cacheable-cache-manager-adapter.git#main
 ```
 
 ### Using adapter
@@ -25,7 +25,7 @@ npm install --save @type-cacheable/core https://github.com/Oscaner/type-cacheabl
 See the [cache-manager documentation](https://github.com/jaredwray/cacheable/tree/main/packages/cache-manager) for more information on available store engines.
 
 ```ts
-import { useAdapter } from '@oscaner/cache-manager-adapter';
+import { useAdapter } from '@nodite/cache-manager-adapter';
 import { KeyvCacheableMemory } from 'cacheable';
 import Keyv from 'keyv';
 

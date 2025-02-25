@@ -1,5 +1,5 @@
 const packageName = require('./package.json')
-  .name.split('@oscaner/')
+  .name.split('@nodite/')
   .pop();
 
 module.exports = {
