@@ -2,6 +2,7 @@ import cacheableManager, { CacheClient, CacheManagerOptions } from '@type-cachea
 import { createCache } from 'cache-manager';
 import { Keyv } from 'keyv';
 import wcmatch from 'wildcard-match';
+import chunk from 'lodash.chunk'
 
 /**
  * cache-manager
@@ -37,7 +38,8 @@ export class CacheManagerAdapter implements CacheClient {
 
   public async del(cacheKey: string | string[]): Promise<void> {
     if (!Array.isArray(cacheKey)) cacheKey = [cacheKey];
-    await Promise.all(cacheKey.map(async (key) => await this.client.del(key)));
+    const delPromises = cacheKey.map(async (key) => await this.client.del(key));
+    for (const chunked of chunk(delPromises, 100)) await Promise.all(chunked);
   }
 
   public async keys(pattern: string): Promise<string[]> {
@@ -139,8 +141,8 @@ export class CacheManagerAdapter implements CacheClient {
   }
 
   async delHash(hashKeyOrKeys: string | string[]): Promise<void> {
-    const keys = Array.isArray(hashKeyOrKeys) ? hashKeyOrKeys : [hashKeyOrKeys];
-    const delPromises = keys.map((key) => this.keys(key).then(this.del));
+    const hashKeys = Array.isArray(hashKeyOrKeys) ? hashKeyOrKeys : [hashKeyOrKeys];
+    const delPromises = hashKeys.map((hashKey) => this.keys(hashKey).then(this.del));
     await Promise.all(delPromises);
   }
 
