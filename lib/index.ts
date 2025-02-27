@@ -61,77 +61,81 @@ export class CacheManagerAdapter implements CacheClient {
       }
     };
 
-    const keyss = await Promise.all(
-      this.stores.map(async (store): Promise<string[]> => {
-        // pattern.
-        let _pattern: string;
+    const keysPromises = this.stores.map(async (store): Promise<string[]> => {
+      // pattern.
+      let _pattern: string;
 
-        if (!store.useKeyPrefix) {
-          _pattern = pattern;
-        } else if (store.namespace && !pattern.startsWith(store.namespace)) {
-          _pattern = `${store.namespace}:${pattern}`;
-        } else {
-          _pattern = pattern;
+      if (!store.useKeyPrefix) {
+        _pattern = pattern;
+      } else if (store.namespace && !pattern.startsWith(store.namespace)) {
+        _pattern = `${store.namespace}:${pattern}`;
+      } else {
+        _pattern = pattern;
+      }
+
+      // original store.
+      let orgStore: any
+
+      if (store.store.store?.keys) {
+        orgStore = store.store.store;
+      } else if (store.store.keys) {
+        orgStore = store.store;
+      }
+
+      const dialect = store.store.opts.dialect
+
+      const keyFnTag = orgStore?.keys?.[Symbol.toStringTag]
+
+      const orgStoreTag = orgStore?.[Symbol.toStringTag];
+
+      // keys.
+      const keys = [] as string[];
+
+      // Map Iterator
+      if (keyFnTag === 'Map Iterator') {
+        keys.push(...Array.from<string>(orgStore?.keys))
+      }
+      // AsyncGeneratorFunction
+      else if (keyFnTag === 'AsyncGeneratorFunction') {
+        for await (const key of orgStore?.keys(_pattern)) {
+          keys.push(key);
         }
-
-        // original store.
-        let orgStore: any
-
-        if (store.store.store?.keys) {
-          orgStore = store.store.store;
-        } else if (store.store.keys) {
-          orgStore = store.store;
+      }
+      // GeneratorFunction
+      else if (keyFnTag === 'GeneratorFunction') {
+        keys.push(...Array.from<string>(orgStore?.keys(_pattern)))
+      }
+      // AsyncFunction
+      else if (keyFnTag === 'AsyncFunction') {
+        keys.push(...(await orgStore?.keys(_pattern)))
+      }
+      // postgres
+      else if (dialect === 'postgres') {
+        const select = `SELECT key FROM ${store.store.opts.schema!}.${store.store.opts.table!} WHERE key LIKE $1`;
+        const ptn = _pattern?.replaceAll('*', '%') ?? "";
+        const rows = await store.store.query(select, [ptn ? `%${ptn}%` : '%']);
+        keys.push(...rows.map((row: any) => row.key));
+      }
+      // keyv
+      else if (store.iterator) {
+        for await (const [key, value] of store.iterator(_pattern)) {
+          keys.push(key);
         }
+      }
+      else {
+        throw new Error('Not implemented');
+      }
 
-        const dialect = store.store.opts.dialect
+      return keys.filter(key => isMatch(_pattern, key));
+    })
 
-        const keyFnTag = orgStore?.keys?.[Symbol.toStringTag]
+    const keys = [] as string[];
 
-        const orgStoreTag = orgStore?.[Symbol.toStringTag];
+    for (const keysPromise of keysPromises) {
+      keys.push(...await keysPromise);
+    }
 
-        // keys.
-        const keys = [] as string[];
-
-        // Map Iterator
-        if (keyFnTag === 'Map Iterator') {
-          keys.push(...Array.from<string>(orgStore?.keys))
-        }
-        // AsyncGeneratorFunction
-        else if (keyFnTag === 'AsyncGeneratorFunction') {
-          for await (const key of orgStore?.keys(_pattern)) {
-            keys.push(key);
-          }
-        }
-        // GeneratorFunction
-        else if (keyFnTag === 'GeneratorFunction') {
-          keys.push(...Array.from<string>(orgStore?.keys(_pattern)))
-        }
-        // AsyncFunction
-        else if (keyFnTag === 'AsyncFunction') {
-          keys.push(...(await orgStore?.keys(_pattern)))
-        }
-        // postgres
-        else if (dialect === 'postgres') {
-          const select = `SELECT key FROM ${store.store.opts.schema!}.${store.store.opts.table!} WHERE key LIKE $1`;
-          const ptn = _pattern?.replaceAll('*', '%') ?? "";
-          const rows = await store.store.query(select, [ptn ? `%${ptn}%` : '%']);
-          keys.push(...rows.map((row: any) => row.key));
-        }
-        // keyv
-        else if (store.iterator) {
-          for await (const [key, value] of store.iterator(_pattern)) {
-            keys.push(key);
-          }
-        }
-        else {
-          throw new Error('Not implemented');
-        }
-
-        return keys.filter(key => isMatch(_pattern, key));
-      })
-    )
-
-    return keyss.flat();
+    return keys;
   }
 
   async delHash(hashKeyOrKeys: string | string[]): Promise<void> {
