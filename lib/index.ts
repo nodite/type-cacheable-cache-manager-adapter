@@ -131,13 +131,7 @@ export class CacheManagerAdapter implements CacheClient {
       return keys.filter(key => isMatch(_pattern, key));
     })
 
-    const keys = [] as string[];
-
-    for (const keysPromise of keysPromises) {
-      keys.push(...await keysPromise);
-    }
-
-    return keys;
+    return (await Promise.all(keysPromises)).flat();
   }
 
   async delHash(hashKeyOrKeys: string | string[]): Promise<void> {
