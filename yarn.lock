@@ -530,7 +530,8 @@
 
 "@resolid/keyv-sqlite@github:nodite/keyv-sqlite#main":
   version "5.0.1"
-  resolved "https://codeload.github.com/nodite/keyv-sqlite/tar.gz/38f1eda2130b97cebc21ac15d97c130a9ffb61e7"
+  uid d261e5e71d29cc21a93149bf7ee7bd6addf73057
+  resolved "https://codeload.github.com/nodite/keyv-sqlite/tar.gz/d261e5e71d29cc21a93149bf7ee7bd6addf73057"
 
 "@sinclair/typebox@^0.27.8":
   version "0.27.8"
