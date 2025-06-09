@@ -51,7 +51,7 @@
   },
   "dependencies": {
     "@type-cacheable/core": "^14",
-    "cache-manager": "^6",
+    "cache-manager": "^7",
     "keyv": "^5",
     "lodash.chunk": "^4",
     "wildcard-match": "^5"
