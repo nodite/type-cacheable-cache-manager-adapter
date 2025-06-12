@@ -2,10 +2,10 @@ import { join } from "node:path";
 import { createCache } from 'cache-manager';
 import { Cacheable, CacheClear } from '@type-cacheable/core';
 import { CacheManagerAdapter, useAdapter } from '../lib';
-// import { KeyvCacheableMemory } from 'cacheable';
+import { KeyvCacheableMemory } from 'cacheable';
 // import {KeyvSqlite} from '@resolid/keyv-sqlite'
 // import { LRUCache } from 'lru-cache'
-import {KeyvPostgres} from '@keyv/postgres'
+// import {KeyvPostgres} from '@keyv/postgres'
 import { Keyv } from 'keyv';
 
 const keyName = 'aSimpleCacheManagerKey';
@@ -20,13 +20,13 @@ describe('CacheManagerAdapter Tests', () => {
   let cacheManagerAdapter: CacheManagerAdapter;
 
   beforeAll(async () => {
-    // const keyv = new Keyv({
-    //   store: new KeyvCacheableMemory(),
-    //   useKeyPrefix: false,
-    //   serialize: undefined,
-    //   deserialize: undefined,
-    //   namespace: '',
-    // });
+    const keyv = new Keyv({
+      store: new KeyvCacheableMemory(),
+      useKeyPrefix: false,
+      serialize: undefined,
+      deserialize: undefined,
+      namespace: '',
+    });
 
     // const keyv = new Keyv({
     //   store: new KeyvSqlite({
@@ -46,14 +46,14 @@ describe('CacheManagerAdapter Tests', () => {
     //   namespace: '',
     // })
 
-    const keyv = new Keyv({
-      store: new KeyvPostgres({
-        uri: 'postgres://test:test@localhost:5432/test',
-        table: 'test',
-      }),
-      useKeyPrefix: false,
-      namespace: '',
-    });
+    // const keyv = new Keyv({
+    //   store: new KeyvPostgres({
+    //     uri: 'postgres://test:test@localhost:5432/test',
+    //     table: 'test',
+    //   }),
+    //   useKeyPrefix: false,
+    //   namespace: '',
+    // });
 
 
     client = createCache({ stores: [keyv] });
@@ -166,7 +166,7 @@ describe('CacheManagerAdapter Tests', () => {
       await cacheManagerAdapter.del(keyName);
       const result = await client.get(keyName);
 
-      expect(result).toBeNull();
+      expect(result).toBeUndefined();
     });
 
     it('should not throw error on an empty array of keys', async () => {
@@ -193,9 +193,9 @@ describe('CacheManagerAdapter Tests', () => {
       const result_2 = await client.get(keyName_2);
       const result_3 = await client.get(compoundKey);
 
-      expect(result_1).toBeNull();
-      expect(result_2).toBeNull();
-      expect(result_3).not.toBeNull();
+      expect(result_1).toBeUndefined();
+      expect(result_2).toBeUndefined();
+      expect(result_3).not.toBeUndefined();
     });
   });
 
@@ -225,6 +225,7 @@ describe('CacheManagerAdapter Tests', () => {
         const mockGetObjectValueImplementation = jest.fn();
 
         class TestClass {
+          // @ts-ignore
           @Cacheable({
             client: cacheManagerAdapter,
             hashKey: 'user',
@@ -236,6 +237,7 @@ describe('CacheManagerAdapter Tests', () => {
             return id;
           }
 
+          // @ts-ignore
           @Cacheable({
             client: cacheManagerAdapter,
             hashKey: 'userInt',
@@ -247,6 +249,7 @@ describe('CacheManagerAdapter Tests', () => {
             return id;
           }
 
+          // @ts-ignore
           @Cacheable({
             client: cacheManagerAdapter,
             hashKey: 'boolVal',
@@ -258,6 +261,7 @@ describe('CacheManagerAdapter Tests', () => {
             return value;
           }
 
+          // @ts-ignore
           @Cacheable({
             client: cacheManagerAdapter,
             hashKey: 'arrVal',
@@ -269,6 +273,7 @@ describe('CacheManagerAdapter Tests', () => {
             return ['true', true, 'false', false, 1, '1'];
           }
 
+          // @ts-ignore
           @Cacheable({
             client: cacheManagerAdapter,
             hashKey: 'objVal',
@@ -364,6 +369,7 @@ describe('CacheManagerAdapter Tests', () => {
     describe('@CacheClear Decorator', () => {
       const getTestInstance = () => {
         class TestClass {
+          // @ts-ignore
           @Cacheable({
             client: cacheManagerAdapter,
             cacheKey: 'users',
@@ -372,6 +378,7 @@ describe('CacheManagerAdapter Tests', () => {
             return [{ id: '123', name: 'Kodiak' }];
           }
 
+          // @ts-ignore
           @Cacheable({
             client: cacheManagerAdapter,
             cacheKey: 'todos',
@@ -380,6 +387,7 @@ describe('CacheManagerAdapter Tests', () => {
             return [{ id: '456', done: false }];
           }
 
+          // @ts-ignore
           @CacheClear({
             client: cacheManagerAdapter,
             cacheKey: ['users', 'todos'],

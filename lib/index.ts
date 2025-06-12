@@ -2,7 +2,6 @@ import cacheableManager, { CacheClient, CacheManagerOptions } from '@type-cachea
 import { createCache } from 'cache-manager';
 import { Keyv } from 'keyv';
 import wcmatch from 'wildcard-match';
-import chunk from 'lodash.chunk'
 
 /**
  * cache-manager
@@ -38,8 +37,7 @@ export class CacheManagerAdapter implements CacheClient {
 
   public async del(cacheKey: string | string[]): Promise<void> {
     if (!Array.isArray(cacheKey)) cacheKey = [cacheKey];
-    const delPromises = cacheKey.map(async (key) => await this.client.del(key));
-    for (const chunked of chunk(delPromises, 100)) await Promise.all(chunked);
+    await this.client.mdel(cacheKey);
   }
 
   public async keys(pattern: string): Promise<string[]> {
@@ -65,14 +63,14 @@ export class CacheManagerAdapter implements CacheClient {
 
     const keysPromises = this.stores.map(async (store): Promise<string[]> => {
       // pattern.
-      let _pattern: string;
+      let keyPattern: string;
 
       if (!store.useKeyPrefix) {
-        _pattern = pattern;
+        keyPattern = pattern;
       } else if (store.namespace && !pattern.startsWith(store.namespace)) {
-        _pattern = `${store.namespace}:${pattern}`;
+        keyPattern = `${store.namespace}:${pattern}`;
       } else {
-        _pattern = pattern;
+        keyPattern = pattern;
       }
 
       // original store.
@@ -84,9 +82,9 @@ export class CacheManagerAdapter implements CacheClient {
         orgStore = store.store;
       }
 
-      const dialect = store.store.opts.dialect
+      const dialect = store.store?.opts?.dialect
 
-      const keyFnTag = orgStore?.keys?.[Symbol.toStringTag]
+      const keysFnTag = orgStore?.keys?.[Symbol.toStringTag]
 
       const orgStoreTag = orgStore?.[Symbol.toStringTag];
 
@@ -94,33 +92,39 @@ export class CacheManagerAdapter implements CacheClient {
       const keys = [] as string[];
 
       // Map Iterator
-      if (keyFnTag === 'Map Iterator') {
+      if (keysFnTag === 'Map Iterator') {
         keys.push(...Array.from<string>(orgStore?.keys))
       }
       // AsyncGeneratorFunction
-      else if (keyFnTag === 'AsyncGeneratorFunction') {
-        for await (const key of orgStore?.keys(_pattern)) {
+      else if (keysFnTag === 'AsyncGeneratorFunction') {
+        for await (const key of orgStore?.keys(keyPattern)) {
           keys.push(key);
         }
       }
       // GeneratorFunction
-      else if (keyFnTag === 'GeneratorFunction') {
-        keys.push(...Array.from<string>(orgStore?.keys(_pattern)))
+      else if (keysFnTag === 'GeneratorFunction') {
+        keys.push(...Array.from<string>(orgStore?.keys(keyPattern)))
       }
       // AsyncFunction
-      else if (keyFnTag === 'AsyncFunction') {
-        keys.push(...(await orgStore?.keys(_pattern)))
+      else if (keysFnTag === 'AsyncFunction') {
+        keys.push(...(await orgStore?.keys(keyPattern)))
+      }
+      // Array Iterator
+      else if (keysFnTag === 'Array Iterator') {
+        for (const key of orgStore?.keys) {
+          keys.push(key);
+        }
       }
       // postgres
       else if (dialect === 'postgres') {
         const select = `SELECT key FROM ${store.store.opts.schema!}.${store.store.opts.table!} WHERE key LIKE $1`;
-        const ptn = _pattern?.replaceAll('*', '%') ?? "";
+        const ptn = keyPattern?.replaceAll('*', '%') ?? "";
         const rows = await store.store.query(select, [ptn ? `%${ptn}%` : '%']);
         keys.push(...rows.map((row: any) => row.key));
       }
       // keyv
       else if (store.iterator) {
-        for await (const [key, value] of store.iterator(_pattern)) {
+        for await (const [key, value] of store.iterator(keyPattern)) {
           keys.push(key);
         }
       }
@@ -128,7 +132,7 @@ export class CacheManagerAdapter implements CacheClient {
         throw new Error('Not implemented');
       }
 
-      return keys.filter(key => isMatch(_pattern, key));
+      return keys.filter(key => isMatch(keyPattern, key));
     })
 
     return (await Promise.all(keysPromises)).flat();
