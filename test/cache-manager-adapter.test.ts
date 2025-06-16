@@ -20,12 +20,20 @@ describe('CacheManagerAdapter Tests', () => {
   let cacheManagerAdapter: CacheManagerAdapter;
 
   beforeAll(async () => {
+    // const keyv = new Keyv({
+    //   store: new KeyvCacheableMemory(),
+    //   useKeyPrefix: false,
+    //   serialize: undefined,
+    //   deserialize: undefined,
+    //   namespace: '',
+    // });
+
     const keyv = new Keyv({
       store: new KeyvCacheableMemory(),
-      useKeyPrefix: false,
+      useKeyPrefix: true,
       serialize: undefined,
       deserialize: undefined,
-      namespace: '',
+      namespace: 'namespace',
     });
 
     // const keyv = new Keyv({

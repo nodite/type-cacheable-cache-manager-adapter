@@ -41,36 +41,16 @@ export class CacheManagerAdapter implements CacheClient {
   }
 
   public async keys(pattern: string): Promise<string[]> {
-    /**
-     * isMatch.
-     */
-    const isMatch = (ptn: string, key: string) => {
-      if (ptn === key)  return true;
-
-      if (ptn.includes('%')) {
-        ptn = ptn.replaceAll('%', '*');
-      }
-
-      if (wcmatch(ptn)(key)) return true;
-
-      try {
-        const regExp = new RegExp(ptn, 'g');
-        return regExp.test(key);
-      } catch {
-        return false;
-      }
-    };
-
     const keysPromises = this.stores.map(async (store): Promise<string[]> => {
       // pattern.
-      let keyPattern: string;
+      let realPattern: string;
 
       if (!store.useKeyPrefix) {
-        keyPattern = pattern;
+        realPattern = pattern;
       } else if (store.namespace && !pattern.startsWith(store.namespace)) {
-        keyPattern = `${store.namespace}:${pattern}`;
+        realPattern = `${store.namespace}:${pattern}`;
       } else {
-        keyPattern = pattern;
+        realPattern = pattern;
       }
 
       // original store.
@@ -88,8 +68,16 @@ export class CacheManagerAdapter implements CacheClient {
 
       const orgStoreTag = orgStore?.[Symbol.toStringTag];
 
-      // keys.
-      const keys = [] as string[];
+      // pattern fix.
+      if (dialect === 'postgres') {
+        realPattern = realPattern.replaceAll('*', '%');
+      } else if (dialect === 'sqlite') {
+        realPattern = realPattern.replaceAll('*', '%');
+      }
+
+      // ######################################
+      // Get keys.
+      let keys = [] as string[];
 
       // Map Iterator
       if (keysFnTag === 'Map Iterator') {
@@ -97,17 +85,17 @@ export class CacheManagerAdapter implements CacheClient {
       }
       // AsyncGeneratorFunction
       else if (keysFnTag === 'AsyncGeneratorFunction') {
-        for await (const key of orgStore?.keys(keyPattern)) {
+        for await (const key of orgStore?.keys(realPattern)) {
           keys.push(key);
         }
       }
       // GeneratorFunction
       else if (keysFnTag === 'GeneratorFunction') {
-        keys.push(...Array.from<string>(orgStore?.keys(keyPattern)))
+        keys.push(...Array.from<string>(orgStore?.keys(realPattern)))
       }
       // AsyncFunction
       else if (keysFnTag === 'AsyncFunction') {
-        keys.push(...(await orgStore?.keys(keyPattern)))
+        keys.push(...(await orgStore?.keys(realPattern)))
       }
       // Array Iterator
       else if (keysFnTag === 'Array Iterator') {
@@ -118,13 +106,12 @@ export class CacheManagerAdapter implements CacheClient {
       // postgres
       else if (dialect === 'postgres') {
         const select = `SELECT key FROM ${store.store.opts.schema!}.${store.store.opts.table!} WHERE key LIKE $1`;
-        const ptn = keyPattern?.replaceAll('*', '%') ?? "";
-        const rows = await store.store.query(select, [ptn ? `%${ptn}%` : '%']);
+        const rows = await store.store.query(select, [realPattern ? `%${realPattern}%` : '%']);
         keys.push(...rows.map((row: any) => row.key));
       }
       // keyv
       else if (store.iterator) {
-        for await (const [key, value] of store.iterator(keyPattern)) {
+        for await (const [key, value] of store.iterator(realPattern)) {
           keys.push(key);
         }
       }
@@ -132,7 +119,16 @@ export class CacheManagerAdapter implements CacheClient {
         throw new Error('Not implemented');
       }
 
-      return keys.filter(key => isMatch(keyPattern, key));
+      // ######################################
+      // filter keys by pattern.
+      keys = keys.filter(key => this.keyMatch(pattern, key))
+
+      if (store.useKeyPrefix && store.namespace) {
+        const reg = new RegExp(`^${store.namespace}:`);
+        keys = keys.map(key => key.replace(reg, ''));
+      }
+
+      return keys;
     })
 
     return (await Promise.all(keysPromises)).flat();
@@ -146,6 +142,21 @@ export class CacheManagerAdapter implements CacheClient {
 
   public getClientTTL(): number {
     return 0;
+  }
+
+  protected keyMatch(pattern: string, key: string): boolean {
+    if (pattern === key) return true;
+
+    pattern = pattern.replaceAll('%', '*');
+
+    if (wcmatch(pattern)(key)) return true;
+
+    try {
+      const regExp = new RegExp(pattern, 'g');
+      return regExp.test(key);
+    } catch {
+      return false;
+    }
   }
 }
 
